@@ -1,2 +1,2 @@
 # simple_world
-C lib for create and control world
+C lib for create multithread world

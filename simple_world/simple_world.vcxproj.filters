@@ -28,7 +28,7 @@
       <Filter>main</Filter>
     </ClInclude>
     <ClInclude Include="World.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

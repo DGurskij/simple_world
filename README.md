@@ -1,2 +1,2 @@
 # simple_world
-C lib for create multithread world
+C++ Windows lib for create multithread world

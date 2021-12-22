@@ -1,6 +1,6 @@
-#include "dll_main/pch.h"
+#include "pch.h"
 #include "simple_world.h"
-#include "World.h"
+#include "../structures/World.h"
 
 float swDistance2D(float x1, float y1, float x2, float y2)
 {

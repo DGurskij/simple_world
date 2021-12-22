@@ -24,10 +24,10 @@
     <ClInclude Include="dll_main\pch.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="simple_world.h">
+    <ClInclude Include="dll_main\simple_world.h">
       <Filter>main</Filter>
     </ClInclude>
-    <ClInclude Include="World.h">
+    <ClInclude Include="structures\World.h">
       <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClCompile Include="dll_main\pch.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="simple_world.c">
+    <ClCompile Include="dll_main\simple_world.c">
       <Filter>main</Filter>
     </ClCompile>
   </ItemGroup>

@@ -287,8 +287,8 @@
   <ItemGroup>
     <ClInclude Include="dll_main\framework.h" />
     <ClInclude Include="dll_main\pch.h" />
-    <ClInclude Include="simple_world.h" />
-    <ClInclude Include="World.h" />
+    <ClInclude Include="dll_main\simple_world.h" />
+    <ClInclude Include="structures\World.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dll_main\dllmain.c" />
@@ -302,7 +302,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Extended_release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="simple_world.c" />
+    <ClCompile Include="dll_main\simple_world.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

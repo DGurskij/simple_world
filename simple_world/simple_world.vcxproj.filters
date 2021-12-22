@@ -32,13 +32,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp">
+    <ClCompile Include="dllmain.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="pch.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="simple_world.cpp">
+    <ClCompile Include="simple_world.c">
       <Filter>main</Filter>
     </ClCompile>
   </ItemGroup>

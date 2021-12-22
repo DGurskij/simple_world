@@ -1,6 +1,11 @@
 #pragma once
 
-typedef struct
+typedef struct SWorld
 {
 	char count_threads;
-} World;
+	float global_speed;
+
+	HANDLE global_sync;
+	HANDLE internal_sync;
+	
+} SW_World;

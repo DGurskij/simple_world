@@ -285,14 +285,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="dll_main\framework.h" />
+    <ClInclude Include="dll_main\pch.h" />
     <ClInclude Include="simple_world.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.c" />
-    <ClCompile Include="pch.c">
+    <ClCompile Include="dll_main\dllmain.c" />
+    <ClCompile Include="dll_main\pch.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Extended_debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

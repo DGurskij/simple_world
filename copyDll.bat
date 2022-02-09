@@ -16,12 +16,13 @@ XCOPY simple_world\Debug\simple_world.lib %1\debug_x32\ /y
 XCOPY simple_world\x64\Debug\simple_world.dll %1\debug_x64\ /y
 XCOPY simple_world\x64\Debug\simple_world.lib %1\debug_x64\ /y
 
-XCOPY simple_world\simple_world.h %1\include\ /y
+XCOPY simple_world\dll_main\simple_world.h %1\include\ /y
 
 pause
-exit
+goto end
 
 :error
 @ECHO Undefined path, send it to first argument
 pause
-exit
+
+:end

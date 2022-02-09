@@ -3,8 +3,8 @@
 **/x64
 **/.vs
 
-./copyDll.bat
-./simple_world/simple_world.sln
-./simple_world/simple_world.vcxproj
-./simple_world/simple_world.filters
-./simple_world/simple_world.user
+copyDll.bat
+simple_world/simple_world.sln
+simple_world/simple_world.vcxproj
+simple_world/simple_world.vcxproj.filters
+simple_world/simple_world.vcxproj.user

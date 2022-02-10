@@ -31,16 +31,16 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 	}
 
 	char i = 0;
-	char count_threads = world_config.count_threads;
+	char count_threads = world_config.type == SW_WTYPE_MULTITHREADED ? world_config.count_threads : 0;
 
 	world->is_exist = 1;
 
 	world->req_iter_time_ms = world_config.req_iter_time_ms;
 	world->fps = 1000 / world_config.req_iter_time_ms;
 
-	world->count_threads = world_config.type == SW_WTYPE_MULTITHREADED ? count_threads : 0;
+	world->count_threads = count_threads;
 
-	world->main_collections = (SW_ObjectCollection**)malloc(sizeof(SW_ObjectCollection*) * (world->count_threads + 1));
+	world->main_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
 
 	if (!world->main_collections)
 	{
@@ -50,7 +50,7 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 		return 0;
 	}
 
-	for (i = 0; i < world->count_threads + 1; i++)
+	for (i = 0; i < count_threads + 1; i++)
 	{
 		world->main_collections[i] = objectCollectionCreate();
 

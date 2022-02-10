@@ -55,6 +55,5 @@ struct SWorld
 	/* OBJECTS PART */
 	
 	SW_ObjectCollection** main_collections;
-
 	SW_ObjectCollection** independ_collections;
 };

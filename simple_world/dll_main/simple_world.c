@@ -13,7 +13,7 @@ SW_World* bind_world;
 void destroyMainCollections(SW_World* world, char end_index);
 void destroyIndependentCollections(SW_World* world, char end_index);
 void destroyHelpersPointers(SW_World* world);
-void destroyHelperThreads(SW_World* world, char end_index);
+void destroyHelperThreads(SW_World* world, char end_index, char threads_ended);
 
 SW_World* swCreateWorld(SW_WorldConfig world_config)
 {
@@ -135,7 +135,7 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 					printf("SIMPLE_WORLD::ERROR::helper thread %d not initialized\n", i);
 #endif
 
-					destroyHelperThreads(world, i);
+					destroyHelperThreads(world, i, 0);
 					destroyHelpersPointers(world);
 					destroyMainCollections(world, count_threads + 2);
 					destroyIndependentCollections(world, count_threads + 2);
@@ -458,9 +458,14 @@ void destroyHelpersPointers(SW_World* world)
 	{
 		free(world->helpers_threads_p);
 	}
+
+	if (world->internal_sync)
+	{
+		CloseHandle(world->internal_sync);
+	}
 }
 
-void destroyHelperThreads(SW_World* world, char end_index)
+void destroyHelperThreads(SW_World* world, char end_index, char threads_ended)
 {
 	if (end_index > 0)
 	{
@@ -468,7 +473,10 @@ void destroyHelperThreads(SW_World* world, char end_index)
 
 		do
 		{
-			TerminateThread(world->helpers_threads[end_index], 0);
+			if (!threads_ended)
+			{
+				TerminateThread(world->helpers_threads[end_index], 0);
+			}
 
 			CloseHandle(world->helpers_threads[end_index]);
 			CloseHandle(world->helpers_sync[end_index]);
@@ -497,18 +505,8 @@ void swDestroyWorld(SW_World* world)
 
 		if (world->count_threads != 0)
 		{
-			for (i = 0; i < world->count_threads; i++)
-			{
-				printf("SIMPLE_WORLD::Close handle %d\n", i);
-				CloseHandle(world->helpers_threads[i]);
-				CloseHandle(world->helpers_sync[i]);
-			}
-
-			free(world->helpers_sync);
-			free(world->helpers_threads);
-			free(world->helpers_threads_p);
-
-			CloseHandle(world->internal_sync);
+			destroyHelperThreads(world, world->count_threads, 1);
+			destroyHelpersPointers(world);
 		}
 
 		CloseHandle(world->global_sync);

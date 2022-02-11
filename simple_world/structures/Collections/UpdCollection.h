@@ -21,7 +21,7 @@ void updCollectionPush(SW_UpdCollection* collection, SW_UpdOperation* item);
 /*
 	remove object from collection, with_destroy = 1 - free object memory
 */
-void updCollectionRemoveItem(SW_UpdCollection* collection, SW_UpdOperation* item, char with_destroy);
+void updCollectionRemoveItem(SW_UpdCollection* collection, SW_UpdOperation* item, unsigned with_destroy);
 
 /*
 	Destroy dynamic items data

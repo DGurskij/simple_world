@@ -47,7 +47,7 @@ void objectCollectionPush(SW_ObjectCollection* collection, SW_Object* obj)
 	collection->last = obj;
 }
 
-void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object, char with_destroy)
+void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object, unsigned with_destroy)
 {
 	if (collection->first)
 	{

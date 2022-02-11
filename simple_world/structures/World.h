@@ -5,7 +5,7 @@
 
 typedef struct SThreadHelper {
 	SW_World* world;
-	char thread_index;
+	unsigned thread_index;
 } SW_ThreadHelper;
 
 struct SWorld
@@ -15,7 +15,7 @@ struct SWorld
 	/*
 		World thread type
 	*/
-	char type;
+	unsigned type;
 
 	/*
 		time for iteration in milliseconds
@@ -29,13 +29,13 @@ struct SWorld
 		1 - launched
 		2 - stoped
 	*/
-	char state;
+	unsigned state;
 
-	char is_exist;
+	unsigned is_exist;
 	
 	/* JOB PART */
 
-	char count_threads;
+	unsigned count_threads;
 
 	void* main_thread;
 	void** helpers_threads;
@@ -54,6 +54,18 @@ struct SWorld
 
 	/* OBJECTS PART */
 	
+	// base collections, objects inside be process though full cycle
 	SW_ObjectCollection** main_collections;
+
+	/*
+		optimization collection, contains objects which do not depend on others objects
+		objects processed by specified thread
+	*/
 	SW_ObjectCollection** independ_collections;
+
+	/*
+		optimization collection, contains objects which has only const updates
+		object also processed by specified thread, but cycle consists of one action - update without reset and interact
+	*/
+	SW_ObjectCollection** const_collections;
 };

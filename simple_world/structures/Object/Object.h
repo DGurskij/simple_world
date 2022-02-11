@@ -17,7 +17,7 @@ struct SWObject
 	/*
 		for independ objects update will process inside single thread without synchronized
 	*/
-	char independ;
+	unsigned type;
 
 	/*
 		Custom user data, do not free
@@ -25,5 +25,5 @@ struct SWObject
 	void* data;
 };
 
-SW_Object* objectCreate(void* data, char independ);
+SW_Object* objectCreate(void* data, unsigned type);
 void objectDestroy(SW_Object* object);

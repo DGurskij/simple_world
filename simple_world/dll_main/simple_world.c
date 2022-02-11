@@ -10,10 +10,10 @@ SW_World* bind_world;
 	DESTROY HELPERS
 *********************/
 
-void destroyMainCollections(SW_World* world, char end_index);
-void destroyIndependentCollections(SW_World* world, char end_index);
+void destroyMainCollections(SW_World* world, unsigned end_index);
+void destroyIndependentCollections(SW_World* world, unsigned end_index);
 void destroyHelpersPointers(SW_World* world);
-void destroyHelperThreads(SW_World* world, char end_index, char threads_ended);
+void destroyHelperThreads(SW_World* world, unsigned end_index, unsigned threads_ended);
 
 SW_World* swCreateWorld(SW_WorldConfig world_config)
 {
@@ -30,8 +30,8 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 		return 0;
 	}
 
-	char i = 0;
-	char count_threads = world_config.type == SW_WTYPE_MULTITHREADED ? world_config.count_threads : 0;
+	unsigned i = 0;
+	unsigned count_threads = world_config.type == SW_WTYPE_MULTITHREADED ? world_config.count_threads : 0;
 
 	world->is_exist = 1;
 
@@ -40,6 +40,7 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 
 	world->count_threads = count_threads;
 
+	// START::Init maint collection
 	world->main_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
 
 	if (!world->main_collections)
@@ -65,6 +66,35 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 			return 0;
 		}
 	}
+	// END::Init main collection
+
+	// START::Init const collection
+	world->const_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
+
+	if (!world->const_collections)
+	{
+#ifdef _DEBUG
+		printf("SIMPLE_WORLD::ERROR::const collection not initialized\n");
+#endif
+		return 0;
+	}
+
+	for (i = 0; i < count_threads + 1; i++)
+	{
+		world->const_collections[i] = objectCollectionCreate();
+
+		if (!world->const_collections[i])
+		{
+#ifdef _DEBUG
+			printf("SIMPLE_WORLD::ERROR::const collection %d not initialized\n", i);
+#endif
+
+			destroyMainCollections(world, i);
+			free(world);
+			return 0;
+		}
+	}
+	// END::Init const collection
 
 	world->independ_collections = 0;
 
@@ -72,7 +102,7 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 	{
 		if (count_threads > 0)
 		{
-			// init independ collections
+			// START::Init independ collection
 			if (world_config.enable_independ_collections)
 			{
 				world->independ_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
@@ -103,6 +133,7 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 					}
 				}
 			}
+			// END::Init independ collection
 
 			world->internal_sync = CreateSemaphore(NULL, 0, count_threads, NULL);
 
@@ -245,14 +276,14 @@ unsigned swSyncMoveWorld(SW_World* world)
 	ftime(&start);
 
 	SW_ObjectCollection* collection = world->main_collections[0];
-
 	SW_Object* object = collection->first;
+	SW_UpdOperation* update;
 
 	// set initial cycle values&user_changes
 	while (object)
 	{
 		// clear all accumulators
-		SW_UpdOperation* update = object->upd_operations->first;
+		update = object->upd_operations->first;
 
 		while (update)
 		{
@@ -274,9 +305,10 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 	object = collection->first;
 
+	// iterate through objects and updates them
 	while (object)
 	{
-		SW_UpdOperation* update = object->upd_operations->first;
+		update = object->upd_operations->first;
 
 		// updates by accumulators
 		while (update)
@@ -288,6 +320,22 @@ unsigned swSyncMoveWorld(SW_World* world)
 		update = object->upd_const_operations->first;
 
 		// updates by constant
+		while (update)
+		{
+			update->operationF(update->target_field, update->reset_value);
+			update = update->next;
+		}
+
+		object = object->next;
+	}
+
+	collection = world->const_collections[0];
+	object = collection->first;
+
+	while (object)
+	{
+		update = object->upd_const_operations->first;
+
 		while (update)
 		{
 			update->operationF(update->target_field, update->reset_value);
@@ -314,13 +362,17 @@ unsigned swSyncMoveWorldB()
 
 
 
-SW_Object* swCreateObject(SW_World* world, void* data, char independ, char thread_owner)
+SW_Object* swCreateObject(SW_World* world, void* data, unsigned type, unsigned thread_owner)
 {
-	SW_Object* object = objectCreate(data, independ);
+	SW_Object* object = objectCreate(data, type);
 	
 	if (object)
 	{
-		if (independ && world->type == SW_WTYPE_MULTITHREADED)
+		if (type == SW_OBJECT_CONST)
+		{
+			objectCollectionPush(world->const_collections[thread_owner], object);
+		}
+		else if (type == SW_OBJECT_INDEPEND && world->type == SW_WTYPE_MULTITHREADED)
 		{
 			objectCollectionPush(world->independ_collections[thread_owner], object);
 		}
@@ -333,9 +385,9 @@ SW_Object* swCreateObject(SW_World* world, void* data, char independ, char threa
 	return object;
 }
 
-SW_Object* swCreateObjectB(void* data, char independ, char thread_owner)
+SW_Object* swCreateObjectB(void* data, unsigned type, unsigned thread_owner)
 {
-	return swCreateObject(bind_world, data, independ, thread_owner);
+	return swCreateObject(bind_world, data, type, thread_owner);
 }
 
 void swDestroyObject(SW_Object* object)
@@ -345,9 +397,9 @@ void swDestroyObject(SW_Object* object)
 
 SW_UpdOperation* swAddUpdOpToObject(SW_World* world, SW_Object* object, float* target_field, float reset_value, unsigned math_operation)
 {
-	char count = 1;
+	unsigned count = 1;
 
-	if (object->independ != 0)
+	if (object->type == SW_OBJECT_INDEPEND)
 	{
 		count = world->count_threads + 1;
 	}
@@ -408,7 +460,7 @@ void swSetInitCycleValueToObject(SW_Object* object, float* target_field, float* 
 
 
 
-void destroyMainCollections(SW_World* world, char end_index)
+void destroyMainCollections(SW_World* world, unsigned end_index)
 {
 	if (end_index > 0)
 	{
@@ -416,6 +468,7 @@ void destroyMainCollections(SW_World* world, char end_index)
 
 		do
 		{
+			printf("s %d\n", end_index);
 			objectCollectionDestroy(world->main_collections[end_index]);
 		} while (end_index != 0);
 	}
@@ -423,7 +476,7 @@ void destroyMainCollections(SW_World* world, char end_index)
 	free(world->main_collections);
 }
 
-void destroyIndependentCollections(SW_World* world, char end_index)
+void destroyIndependentCollections(SW_World* world, unsigned end_index)
 {
 	if (world->independ_collections)
 	{
@@ -465,7 +518,7 @@ void destroyHelpersPointers(SW_World* world)
 	}
 }
 
-void destroyHelperThreads(SW_World* world, char end_index, char threads_ended)
+void destroyHelperThreads(SW_World* world, unsigned end_index, unsigned threads_ended)
 {
 	if (end_index > 0)
 	{
@@ -496,7 +549,7 @@ void swDestroyWorld(SW_World* world)
 
 	if (world->type == SW_WTYPE_MULTITHREADED)
 	{
-		char i;
+		unsigned i;
 
 		// relesae main thread if stopped or not launched
 		ReleaseSemaphore(world->global_sync, 1, NULL);
@@ -513,9 +566,12 @@ void swDestroyWorld(SW_World* world)
 		CloseHandle(world->main_thread);
 
 		destroyIndependentCollections(world, world->count_threads + 2);
+		destroyMainCollections(world, world->count_threads + 2);
 	}
-
-	destroyMainCollections(world, world->count_threads + 2);
+	else
+	{
+		destroyMainCollections(world, 1);
+	}
 
 	free(world);
 

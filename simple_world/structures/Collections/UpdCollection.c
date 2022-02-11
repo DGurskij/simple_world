@@ -49,7 +49,7 @@ void updCollectionPush(SW_UpdCollection* collection, SW_UpdOperation* obj)
 	collection->count++;
 }
 
-void updCollectionRemoveItem(SW_UpdCollection* collection, SW_UpdOperation* object, char with_destroy)
+void updCollectionRemoveItem(SW_UpdCollection* collection, SW_UpdOperation* object, unsigned with_destroy)
 {
 	if (collection->first)
 	{

@@ -18,7 +18,7 @@ void objectCollectionPush(SW_ObjectCollection* collection, SW_Object* obj);
 /*
 	remove object from collection, with_destroy = 1 - free object memory
 */
-void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object, char with_destroy);
+void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object, unsigned with_destroy);
 
 /*
 	Destroy dynamic objects data, user data keep save

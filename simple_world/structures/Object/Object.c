@@ -1,7 +1,7 @@
 #include "Object.h"
 #include <malloc.h>
 
-SW_Object* objectCreate(void* data, char independ)
+SW_Object* objectCreate(void* data, unsigned type)
 {
 	SW_Object* object = malloc(sizeof(SW_Object));
 
@@ -18,7 +18,7 @@ SW_Object* objectCreate(void* data, char independ)
 		object->upd_const_operations = updCollectionCreate();
 		object->upd_const_operations_disabled = updCollectionCreate();
 
-		object->independ = independ;
+		object->type = type;
 	}
 
 	return object;

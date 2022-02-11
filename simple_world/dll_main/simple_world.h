@@ -32,7 +32,7 @@ extern "C" {
 		/*
 			Use macro SW_WTYPE_... for this, default SW_WTYPE_MAINTHREADED;
 		*/
-		char type;
+		unsigned type;
 
 		/*
 			Required time for one world iteration
@@ -46,12 +46,12 @@ extern "C" {
 			For count_thread > 0 main engine cycle: read commands, engine states -> interactive -> await another threads -> update objects states
 			threads cycle: await main reading cmds, states -> interactive -> update objects states
 		*/
-		char count_threads;
+		unsigned count_threads;
 
 		/*
 			Enable independ collections, set 0 for not init them
 		*/
-		char enable_independ_collections;
+		unsigned enable_independ_collections;
 	} SW_WorldConfig;
 
 	/*
@@ -88,6 +88,25 @@ extern "C" {
 	SIMPLE_WORLD_API unsigned swSyncMoveWorld(SW_World* world);
 	SIMPLE_WORLD_API unsigned swSyncMoveWorldB();
 
+/*
+	Used for complex calculation with:
+	interaction;
+	update operations;
+	constant update operations;
+*/
+#define SW_OBJECT_BASE 0
+/*
+	Used for independ objects which interact with self or all interactions defined inside same thread
+*/
+#define SW_OBJECT_INDEPEND 1
+/*
+	Used for simple constant operations with independ objects
+	only for const operations, otherwise operations will ignored
+
+	!!!DOESN'T WORK IN - SW_WTYPE_MAINTHREADED
+*/
+#define SW_OBJECT_CONST 2
+
 	/*
 		Create wrapper for object, return 0 if unsuccess
 		data is pointer on csutom sctructure be passed into interaction functions
@@ -96,8 +115,8 @@ extern "C" {
 		thread_owner - number of thread which process updates, 0 - main, 1, 2, ... count_threads
 		independ doesn't work for SW_WTYPE_MAINTHREADED or count_threads = 0
 	*/
-	SIMPLE_WORLD_API SW_Object* swCreateObject(SW_World* world, void* data, char independ, char thread_owner);
-	SIMPLE_WORLD_API SW_Object* swCreateObjectB(void* data, char independ, char thread_owner);
+	SIMPLE_WORLD_API SW_Object* swCreateObject(SW_World* world, void* data, unsigned type, unsigned thread_owner);
+	SIMPLE_WORLD_API SW_Object* swCreateObjectB(void* data, unsigned type, unsigned thread_owner);
 
 	/*
 		Destroy object wrapper
@@ -122,7 +141,6 @@ extern "C" {
 		Work like  swAddUpdOpToObject but instead of accumulate data just update field by const value
 	*/
 	SIMPLE_WORLD_API SW_UpdOperation* swAddConstUpdOpToObject(SW_Object* object, float* target_field, float const_value, unsigned math_operation);
-	//SIMPLE_WORLD_API SW_UpdOperation* swAddConstUpdOpToObjectB(SW_Object* object, float* target_field, float const_value, unsigned math_operation);
 
 	SIMPLE_WORLD_API void swDisableUpdOp(SW_Object* object, SW_UpdOperation* operation);
 

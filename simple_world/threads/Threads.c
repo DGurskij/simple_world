@@ -79,7 +79,7 @@ void mainThread(void* _world)
 	long long sleep_time_ms = 0;
 	long long dtime;
 
-	char thread_number = 0;
+	unsigned thread_number = 0;
 
 	// wait first launch
 	WaitForSingleObject(world->global_sync, INFINITE);
@@ -141,10 +141,10 @@ void helperThread(void* _sw_thread_helper)
 	SW_ThreadHelper* helper = (SW_ThreadHelper*)_sw_thread_helper;
 
 	SW_World* world = helper->world;
-	char thread_index = helper->thread_index;
+	unsigned thread_index = helper->thread_index;
 
 	// number for access to collections
-	char thread_number = helper->thread_index + 1;
+	unsigned thread_number = helper->thread_index + 1;
 
 #ifdef _DEBUG
 	printf("SIMPLE_WORLD::Helper thread start: %d\n", thread_index);

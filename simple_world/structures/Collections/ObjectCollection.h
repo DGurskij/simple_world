@@ -14,7 +14,11 @@ SW_ObjectCollection* objectCollectionCreate();
 */
 void objectCollectionMerge(SW_ObjectCollection* target, SW_ObjectCollection* to_merge);
 
+/*
+	push object object to the end of the collection
+*/
 void objectCollectionPush(SW_ObjectCollection* collection, SW_Object* obj);
+
 /*
 	remove object from collection, with_destroy = 1 - free object memory
 */

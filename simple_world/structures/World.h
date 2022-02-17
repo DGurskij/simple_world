@@ -68,4 +68,10 @@ struct SWorld
 		object also processed by specified thread, but cycle consists of one action - update without reset and interact
 	*/
 	SW_ObjectCollection** const_collections;
+
+	// contain disabled objects
+	SW_ObjectCollection* disabled_objects;
+
+	// contain disabled objects which must be restored
+	SW_ObjectCollection* restore_objects;
 };

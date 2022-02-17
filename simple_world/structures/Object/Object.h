@@ -23,7 +23,14 @@ struct SWObject
 		Custom user data, do not free
 	*/
 	void* data;
+
+	void (*after_update_action)(void* data, SW_Object* object);
+
+	unsigned thread_owner;
+
+	unsigned disabled;
 };
 
-SW_Object* objectCreate(void* data, unsigned type);
+SW_Object* objectCreate(void* data, unsigned type, unsigned thread_owner);
+
 void objectDestroy(SW_Object* object);

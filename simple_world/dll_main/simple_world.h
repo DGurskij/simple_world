@@ -47,11 +47,6 @@ extern "C" {
 			threads cycle: await main reading cmds, states -> interactive -> update objects states
 		*/
 		unsigned count_threads;
-
-		/*
-			Enable independ collections, set 0 for not init them
-		*/
-		unsigned enable_independ_collections;
 	} SW_WorldConfig;
 
 	/*
@@ -67,11 +62,14 @@ extern "C" {
 	*/
 	SIMPLE_WORLD_API void swBindWorld(SW_World* world);
 
+	/*
+		Launch world engine, can be used for resume engine after pause
+	*/
 	SIMPLE_WORLD_API void swLaunchWorld(SW_World* world);
 	SIMPLE_WORLD_API void swLaunchWorldB();
 
 	/*
-		Stop world engine, can be used for synchronized stop
+		Stop world engine, can be used for synchronized stop (pause)
 	*/
 	SIMPLE_WORLD_API void swStopWorld(SW_World* world);
 	SIMPLE_WORLD_API void swStopWorldB();
@@ -142,12 +140,35 @@ extern "C" {
 	*/
 	SIMPLE_WORLD_API SW_UpdOperation* swAddConstUpdOpToObject(SW_Object* object, float* target_field, float const_value, unsigned math_operation);
 
-	SIMPLE_WORLD_API void swDisableUpdOp(SW_Object* object, SW_UpdOperation* operation);
+	/*
+		Add handler which would be called after complete all updates
+	*/
+	SIMPLE_WORLD_API void swAddUpdHandler(SW_Object* object, void(*handler)(void* data, SW_Object* object));
 
+	/*
+		Disable object, do it permanent if engine not active, otherwise work on next iteration
+	*/
+	SIMPLE_WORLD_API void swDisableObject(SW_World* world, SW_Object* object);
+	SIMPLE_WORLD_API void swDisableObjectB(SW_Object* object);
+
+	/*
+		Enable object, do it permanent if engine not active, otherwise work on next iteration
+	*/
+	SIMPLE_WORLD_API void swEnableObject(SW_World* world, SW_Object* object);
+	SIMPLE_WORLD_API void swEnableObjectB(SW_Object* object);
+
+	// TODO: add disable custom operations
+	/*
+		Disable operation, do it permanent for SW_WTYPE_MAINTHREADED or if world not launched, otherwise work on next iteration
+	*/
+	//SIMPLE_WORLD_API void swDisableUpdOp(SW_World* world, SW_Object* object, SW_UpdOperation* operation);
+	//SIMPLE_WORLD_API void swDisableUpdOpB(SW_Object* object, SW_UpdOperation* operation);
+
+	// TODO: add init value for custom field from custom source or const
 	/*
 		Bind field with source which value be asigned on field each time when cycle start
 	*/
-	SIMPLE_WORLD_API void swSetInitCycleValueToObject(SW_Object* object, float* target_field, float* source);
+	//SIMPLE_WORLD_API void swSetInitCycleValueToObject(SW_Object* object, float* target_field, float* source);
 
 	/*
 		Bind field with const value be asigned on field each time when cycle start

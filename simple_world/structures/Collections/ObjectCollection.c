@@ -49,19 +49,24 @@ void objectCollectionPush(SW_ObjectCollection* collection, SW_Object* obj)
 
 void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object, unsigned with_destroy)
 {
-	if (collection->first)
+	if (collection->first == object)
 	{
-		collection->first = collection->first->next;
+		collection->first = object->next;
+		object->next->prev = 0;
 	}
-	else if (collection->last)
+	else if (collection->last == object)
 	{
-		collection->last = collection->last->prev;
+		collection->last = object->prev;
+		object->prev->next = 0;
 	}
 	else
 	{
 		object->prev->next = object->next;
 		object->next->prev = object->prev;
 	}
+
+	object->prev = 0;
+	object->next = 0;
 
 	if (with_destroy)
 	{

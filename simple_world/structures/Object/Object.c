@@ -1,7 +1,7 @@
 #include "Object.h"
 #include <malloc.h>
 
-SW_Object* objectCreate(void* data, unsigned type)
+SW_Object* objectCreate(void* data, unsigned type, unsigned thread_owner)
 {
 	SW_Object* object = malloc(sizeof(SW_Object));
 
@@ -19,6 +19,12 @@ SW_Object* objectCreate(void* data, unsigned type)
 		object->upd_const_operations_disabled = updCollectionCreate();
 
 		object->type = type;
+
+		object->after_update_action = 0;
+
+		object->thread_owner = thread_owner;
+
+		object->disabled = 0;
 	}
 
 	return object;
@@ -39,6 +45,17 @@ void objectDestroy(SW_Object* object)
 		object->next->prev = object->prev;
 	}
 
+	updCollectionDestroy(object->upd_operations);
+	updCollectionDestroy(object->upd_operations_disabled);
+
+	updCollectionDestroy(object->upd_const_operations);
+	updCollectionDestroy(object->upd_const_operations_disabled);
+
+	free(object);
+}
+
+void objectDestroyViaCollection(SW_Object* object)
+{
 	updCollectionDestroy(object->upd_operations);
 	updCollectionDestroy(object->upd_operations_disabled);
 

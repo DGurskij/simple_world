@@ -7,6 +7,7 @@ typedef struct SObjectCollection
 	SW_Object* last;
 } SW_ObjectCollection;
 
+SW_ObjectCollection** createObjectGroup(unsigned count_collections);
 SW_ObjectCollection* objectCollectionCreate();
 
 /*
@@ -22,14 +23,10 @@ void objectCollectionPush(SW_ObjectCollection* collection, SW_Object* obj);
 /*
 	remove object from collection, with_destroy = 1 - free object memory
 */
-void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object, unsigned with_destroy);
+void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* object);
 
 /*
 	Destroy dynamic objects data, user data keep save
 */
 void objectCollectionDestroy(SW_ObjectCollection* collection);
-
-/*
-	Just free collection memory without free objcets data, can be used after merge collections
-*/
-void objectCollectionFree(SW_ObjectCollection* collection);
+void destroyObjectGroup(SW_ObjectCollection** group, unsigned end_index);

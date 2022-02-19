@@ -2,6 +2,7 @@
 
 #include "../dll_main/simple_world.h"
 #include "Collections/ObjectCollection.h"
+#include "Collections/StaticObjectCollection.h"
 
 typedef struct SThreadHelper {
 	SW_World* world;

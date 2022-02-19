@@ -25,35 +25,30 @@ extern "C" {
 	typedef struct SWUpdOperation SW_UpdOperation;
 
 	/*
-		All fields required
-	*/
-	typedef struct SWorldConfig
-	{
-		/*
-			Use macro SW_WTYPE_... for this, default SW_WTYPE_MAINTHREADED;
-		*/
-		unsigned type;
-
-		/*
-			Required time for one world iteration
-			calculated time include: dynamic_cfg_time + iteration_time + update_time + [user_synch_time]
-			world be sleep if calculated time less than req_iter_time_ms;
-		*/
-		unsigned int req_iter_time_ms;
-
-		/*
-			For count_thread = 0 main engine cycle: read commands, engine states -> interactive -> update objects states.
-			For count_thread > 0 main engine cycle: read commands, engine states -> interactive -> await another threads -> update objects states
-			threads cycle: await main reading cmds, states -> interactive -> update objects states
-		*/
-		unsigned count_threads;
-	} SW_WorldConfig;
-
-	/*
 		Return pointer on World structure or 0 if unsuccess.
 		Create world with defined threads for process interaction.
+
+		@param type - Use macro SW_WTYPE_... for this, default SW_WTYPE_MAINTHREADED
+
+		@param req_iter_time_ms - Required time for one world iteration
+			calculated time include: dynamic_cfg_time + iteration_time + update_time + [user_synch_time]
+			world be sleep if calculated time less than req_iter_time_ms
+		
+		@param count_helpers_threads - For count_thread = 0 main engine cycle: read commands, engine states -> interactive -> update objects states.
+			For count_thread > 0 main engine cycle: read commands, engine states -> interactive -> await another threads -> update objects states
+			threads cycle: await main reading cmds, states -> interactive -> update objects states
 	*/
-	SIMPLE_WORLD_API SW_World* swCreateWorld(SW_WorldConfig world_config);
+	SIMPLE_WORLD_API SW_World* swCreateWorld(unsigned type, unsigned int req_iter_time_ms, unsigned count_helpers_threads);
+
+/*
+	count_static_elements - Used for static allocate memory for arrays.
+	Array has better performance for iterate through many objects.
+	Static arrays work for SW_OBJECT_BASE|INDEPEND|CONST types.
+	Alocate count for each collections and threads
+	For SW_WTYPE_MAINTHREADED real count = 2 * count_static_elements
+	For SW_WTYPE_MULTITHREADED real count = (count_helpers_threads > 0 ? 3 : 2) * count_helpers_threads * count_static_elements
+	!!!CAN'T BE REALLOC LATER.
+*/
 
 	/*
 		Bind world global, after bind can use API with postfix 'B' without WORLD parameter

@@ -41,7 +41,7 @@ void mainThreadSimple(void* _world)
 		// restore enabled objects
 		while (object)
 		{
-			objectCollectionRemoveObject(world->restore_objects, object, 0);
+			objectCollectionRemoveObject(world->restore_objects, object);
 
 			if (object->type == SW_OBJECT_BASE)
 			{
@@ -124,7 +124,7 @@ void mainThreadSimple(void* _world)
 			{
 				SW_Object* next = object->next;
 
-				objectCollectionRemoveObject(collection, object, 0);
+				objectCollectionRemoveObject(collection, object);
 				objectCollectionPush(world->disabled_objects, object);
 
 				object = next;
@@ -158,7 +158,7 @@ void mainThreadSimple(void* _world)
 			{
 				SW_Object* next = object->next;
 
-				objectCollectionRemoveObject(collection, object, 0);
+				objectCollectionRemoveObject(collection, object);
 				objectCollectionPush(world->disabled_objects, object);
 
 				object = next;
@@ -247,7 +247,7 @@ void mainThread(void* _world)
 		// restore enabled objects
 		while (object)
 		{
-			objectCollectionRemoveObject(world->restore_objects, object, 0);
+			objectCollectionRemoveObject(world->restore_objects, object);
 
 			if (object->type == SW_OBJECT_BASE)
 			{
@@ -353,7 +353,7 @@ void mainThread(void* _world)
 			{
 				SW_Object* next = object->next;
 
-				objectCollectionRemoveObject(collection, object, 0);
+				objectCollectionRemoveObject(collection, object);
 				objectCollectionPush(world->disabled_objects, object);
 
 				object = next;
@@ -388,7 +388,7 @@ void mainThread(void* _world)
 			{
 				SW_Object* next = object->next;
 
-				objectCollectionRemoveObject(collection, object, 0);
+				objectCollectionRemoveObject(collection, object);
 				objectCollectionPush(world->disabled_objects, object);
 
 				object = next;
@@ -446,7 +446,7 @@ void mainThread(void* _world)
 				{
 					SW_Object* next = object->next;
 
-					objectCollectionRemoveObject(collection, object, 0);
+					objectCollectionRemoveObject(collection, object);
 					objectCollectionPush(world->disabled_objects, object);
 
 					object = next;
@@ -564,7 +564,7 @@ void helperThread(void* _sw_thread_helper)
 			{
 				SW_Object* next = object->next;
 
-				objectCollectionRemoveObject(collection, object, 0);
+				objectCollectionRemoveObject(collection, object);
 				objectCollectionPush(world->disabled_objects, object);
 
 				object = next;
@@ -599,7 +599,7 @@ void helperThread(void* _sw_thread_helper)
 			{
 				SW_Object* next = object->next;
 
-				objectCollectionRemoveObject(collection, object, 0);
+				objectCollectionRemoveObject(collection, object);
 				objectCollectionPush(world->disabled_objects, object);
 
 				object = next;

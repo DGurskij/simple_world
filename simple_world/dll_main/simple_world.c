@@ -10,13 +10,10 @@ SW_World* bind_world;
 	DESTROY HELPERS
 *********************/
 
-void destroyMainCollections(SW_World* world, unsigned end_index);
-void destroyConstCollections(SW_World* world, unsigned end_index);
-void destroyIndependentCollections(SW_World* world, unsigned end_index);
 void destroyHelpersPointers(SW_World* world);
 void destroyHelperThreads(SW_World* world, unsigned end_index, unsigned threads_ended);
 
-SW_World* swCreateWorld(SW_WorldConfig world_config)
+SW_World* swCreateWorld(unsigned type, unsigned int req_iter_time_ms, unsigned count_helpers_threads)
 {
 #ifdef _DEBUG
 	printf("SIMPLE_WORLD::Start creating world\n");
@@ -32,18 +29,18 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 	}
 
 	unsigned i = 0;
-	unsigned count_threads = world_config.type == SW_WTYPE_MULTITHREADED ? world_config.count_threads : 0;
+	unsigned count_threads = type == SW_WTYPE_MULTITHREADED ? count_helpers_threads : 0;
 
-	world->type = world_config.type;
+	world->type = type;
 	world->is_exist = 1;
 
-	world->req_iter_time_ms = world_config.req_iter_time_ms;
-	world->fps = 1000 / world_config.req_iter_time_ms;
+	world->req_iter_time_ms = req_iter_time_ms;
+	world->fps = 1000 / req_iter_time_ms;
 
 	world->count_threads = count_threads;
 
 	// START::Init maint collection
-	world->main_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
+	world->main_collections = createObjectGroup(count_threads + 1);
 
 	world->disabled_objects = objectCollectionCreate();
 	world->restore_objects = objectCollectionCreate();
@@ -53,7 +50,7 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 		// free memory if some allocated
 		if (world->main_collections)
 		{
-			free(world->main_collections);
+			destroyObjectGroup(world->main_collections, count_threads + 1);
 		}
 
 		if (world->disabled_objects)
@@ -73,91 +70,46 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 		free(world);
 		return 0;
 	}
-
-	for (i = 0; i < count_threads + 1; i++)
-	{
-		printf("main %d\n", i);
-		world->main_collections[i] = objectCollectionCreate();
-
-		if (!world->main_collections[i])
-		{
-#ifdef _DEBUG
-			printf("SIMPLE_WORLD::ERROR::main collection %d not initialized\n", i);
-#endif
-
-			destroyMainCollections(world, i);
-			free(world);
-			return 0;
-		}
-	}
 	// END::Init main collection
 
 	// START::Init const collection
-	world->const_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
+	world->const_collections = createObjectGroup(count_threads + 1);
 
 	if (!world->const_collections)
 	{
 #ifdef _DEBUG
 		printf("SIMPLE_WORLD::ERROR::const collection not initialized\n");
 #endif
-		destroyMainCollections(world, i);
+		destroyObjectGroup(world->main_collections, count_threads + 1);
+
+		free(world->disabled_objects);
+		free(world->restore_objects);
 		free(world);
 		return 0;
-	}
-
-	for (i = 0; i < count_threads + 1; i++)
-	{
-		world->const_collections[i] = objectCollectionCreate();
-
-		if (!world->const_collections[i])
-		{
-#ifdef _DEBUG
-			printf("SIMPLE_WORLD::ERROR::const collection %d not initialized\n", i);
-#endif
-
-			destroyMainCollections(world, i);
-			destroyConstCollections(world, i);
-			free(world);
-			return 0;
-		}
 	}
 	// END::Init const collection
 
 	world->independ_collections = 0;
 
-	if (world_config.type == SW_WTYPE_MULTITHREADED)
+	if (type == SW_WTYPE_MULTITHREADED)
 	{
 		if (count_threads > 0)
 		{
 			// START::Init independ collection
-			world->independ_collections = malloc(sizeof(SW_ObjectCollection*) * (count_threads + 1));
+			world->independ_collections = createObjectGroup(count_threads + 1);
 
 			if (!world->independ_collections)
 			{
 #ifdef _DEBUG
 				printf("SIMPLE_WORLD::ERROR::independ collections not initialized\n");
 #endif
-				destroyMainCollections(world, count_threads + 1);
-				destroyConstCollections(world, count_threads + 1);
+				destroyObjectGroup(world->main_collections, count_threads + 1);
+				destroyObjectGroup(world->const_collections, count_threads + 1);
+
+				free(world->disabled_objects);
+				free(world->restore_objects);
+				free(world);
 				return 0;
-			}
-
-			for (i = 0; i < count_threads + 1; i++)
-			{
-				world->independ_collections[i] = objectCollectionCreate();
-
-				if (!world->independ_collections[i])
-				{
-#ifdef _DEBUG
-					printf("SIMPLE_WORLD::ERROR::independ collection %d not initialized\n", i);
-#endif
-
-					destroyMainCollections(world, count_threads + 1);
-					destroyConstCollections(world, count_threads + 1);
-					destroyIndependentCollections(world, i);
-					free(world);
-					return 0;
-				}
 			}
 			// END::Init independ collection
 
@@ -175,9 +127,12 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 #endif
 
 				destroyHelpersPointers(world);
-				destroyMainCollections(world, count_threads + 1);
-				destroyConstCollections(world, count_threads + 1);
-				destroyIndependentCollections(world, count_threads + 1);
+				destroyObjectGroup(world->main_collections, count_threads + 1);
+				destroyObjectGroup(world->const_collections, count_threads + 1);
+				destroyObjectGroup(world->independ_collections, count_threads + 1);
+
+				free(world->disabled_objects);
+				free(world->restore_objects);
 				free(world);
 				return 0;
 			}
@@ -194,9 +149,12 @@ SW_World* swCreateWorld(SW_WorldConfig world_config)
 
 					destroyHelperThreads(world, i, 0);
 					destroyHelpersPointers(world);
-					destroyMainCollections(world, count_threads + 1);
-					destroyConstCollections(world, count_threads + 1);
-					destroyIndependentCollections(world, count_threads + 1);
+					destroyObjectGroup(world->main_collections, count_threads + 1);
+					destroyObjectGroup(world->const_collections, count_threads + 1);
+					destroyObjectGroup(world->independ_collections, count_threads + 1);
+
+					free(world->disabled_objects);
+					free(world->restore_objects);
 					free(world);
 					return 0;
 				}
@@ -301,6 +259,8 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 	ftime(&start);
 
+	world->state = 1;
+
 	SW_ObjectCollection* collection = world->restore_objects;
 	SW_Object* object = collection->first;
 	SW_UpdOperation* update;
@@ -310,7 +270,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 	// restore enabled objects
 	while (object)
 	{
-		objectCollectionRemoveObject(world->restore_objects, object, 0);
+		objectCollectionRemoveObject(world->restore_objects, object);
 
 		if (object->type == SW_OBJECT_BASE)
 		{
@@ -352,8 +312,6 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 	object = collection->first;
 
-	world->state = 1;
-
 	// interaction cycle
 	while (object)
 	{
@@ -393,7 +351,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 		{
 			SW_Object* next = object->next;
 
-			objectCollectionRemoveObject(collection, object, 0);
+			objectCollectionRemoveObject(collection, object);
 			objectCollectionPush(world->disabled_objects, object);
 
 			object = next;
@@ -427,7 +385,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 		{
 			SW_Object* next = object->next;
 
-			objectCollectionRemoveObject(collection, object, 0);
+			objectCollectionRemoveObject(collection, object);
 			objectCollectionPush(world->disabled_objects, object);
 
 			object = next;
@@ -539,15 +497,15 @@ void swDisableObject(SW_World* world, SW_Object* object)
 	{
 		if (object->type == SW_OBJECT_CONST)
 		{
-			objectCollectionRemoveObject(world->const_collections[object->thread_owner], object, 0);
+			objectCollectionRemoveObject(world->const_collections[object->thread_owner], object);
 		}
 		else if (object->type == SW_OBJECT_INDEPEND && world->count_threads > 0)
 		{
-			objectCollectionRemoveObject(world->independ_collections[object->thread_owner], object, 0);
+			objectCollectionRemoveObject(world->independ_collections[object->thread_owner], object);
 		}
 		else
 		{
-			objectCollectionRemoveObject(world->main_collections[object->thread_owner], object, 0);
+			objectCollectionRemoveObject(world->main_collections[object->thread_owner], object);
 		}
 		
 		objectCollectionPush(world->disabled_objects, object);
@@ -567,7 +525,7 @@ void swEnableObject(SW_World* world, SW_Object* object)
 {
 	object->disabled = 0;
 
-	objectCollectionRemoveObject(world->disabled_objects, object, 0);
+	objectCollectionRemoveObject(world->disabled_objects, object);
 	objectCollectionPush(world->restore_objects, object);
 }
 
@@ -610,54 +568,6 @@ void swDisableUpdOpB(SW_Object* object, SW_UpdOperation* operation)
 *********************/
 
 
-
-void destroyMainCollections(SW_World* world, unsigned end_index)
-{
-	if (end_index > 0)
-	{
-		do
-		{
-			end_index--;
-			objectCollectionDestroy(world->main_collections[end_index]);
-		} while (end_index != 0);
-	}
-
-	objectCollectionDestroy(world->disabled_objects);
-	objectCollectionDestroy(world->restore_objects);
-
-	free(world->main_collections);
-}
-
-void destroyConstCollections(SW_World* world, unsigned end_index)
-{
-	if (end_index > 0)
-	{
-		do
-		{
-			end_index--;
-			objectCollectionDestroy(world->const_collections[end_index]);
-		} while (end_index != 0);
-	}
-
-	free(world->const_collections);
-}
-
-void destroyIndependentCollections(SW_World* world, unsigned end_index)
-{
-	if (world->independ_collections)
-	{
-		if (end_index > 0)
-		{
-			do
-			{
-				end_index--;
-				objectCollectionDestroy(world->independ_collections[end_index]);
-			} while (end_index != 0);
-		}
-
-		free(world->independ_collections);
-	}
-}
 
 void destroyHelpersPointers(SW_World* world)
 {
@@ -711,8 +621,6 @@ void swDestroyWorld(SW_World* world)
 
 	if (world->type == SW_WTYPE_MULTITHREADED)
 	{
-		unsigned i;
-
 		// wait if run now
 		if (world->state == 1)
 		{
@@ -732,20 +640,18 @@ void swDestroyWorld(SW_World* world)
 
 			CloseHandle(world->internal_sync);
 
-			destroyIndependentCollections(world, world->count_threads + 1);
+			destroyObjectGroup(world->independ_collections, world->count_threads + 1);
 		}
 
 		CloseHandle(world->global_sync);
 		CloseHandle(world->main_thread);
+	}
 
-		destroyMainCollections(world, world->count_threads + 1);
-		destroyConstCollections(world, world->count_threads + 1);
-	}
-	else
-	{
-		destroyMainCollections(world, 1);
-		destroyConstCollections(world, 1);
-	}
+	destroyObjectGroup(world->main_collections, world->count_threads + 1);
+	destroyObjectGroup(world->const_collections, world->count_threads + 1);
+
+	objectCollectionDestroy(world->disabled_objects);
+	objectCollectionDestroy(world->restore_objects);
 
 	free(world);
 

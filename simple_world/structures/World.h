@@ -3,6 +3,7 @@
 #include "../dll_main/simple_world.h"
 #include "Collections/ObjectCollection.h"
 #include "Collections/StaticObjectCollection.h"
+#include "Object/Interaction.h"
 
 typedef struct SThreadHelper {
 	SW_World* world;
@@ -75,4 +76,6 @@ struct SWorld
 
 	// contain disabled objects which must be restored
 	SW_ObjectCollection* restore_objects;
+
+	SW_InteractionGroup* intreaction_group;
 };

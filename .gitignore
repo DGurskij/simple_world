@@ -3,6 +3,8 @@
 **/x64
 **/.vs
 
+feature/**
+
 copyDll.bat
 simple_world/simple_world.sln
 simple_world/simple_world.vcxproj

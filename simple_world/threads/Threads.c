@@ -117,7 +117,7 @@ void mainThreadSimple(void* _world)
 
 			if (object->after_update_action)
 			{
-				object->after_update_action(object->data, object);
+				object->after_update_action(world, object, object->data);
 			}
 
 			if (object->disabled)
@@ -151,7 +151,7 @@ void mainThreadSimple(void* _world)
 
 			if (object->after_update_action)
 			{
-				object->after_update_action(object->data, object);
+				object->after_update_action(world, object, object->data);
 			}
 
 			if (object->disabled)
@@ -346,7 +346,7 @@ void mainThread(void* _world)
 
 			if (object->after_update_action)
 			{
-				object->after_update_action(object->data, object);
+				object->after_update_action(world, object, object->data);
 			}
 
 			if (object->disabled)
@@ -381,7 +381,7 @@ void mainThread(void* _world)
 
 			if (object->after_update_action)
 			{
-				object->after_update_action(object->data, object);
+				object->after_update_action(world, object, object->data);
 			}
 
 			if (object->disabled)
@@ -439,7 +439,7 @@ void mainThread(void* _world)
 
 				if (object->after_update_action)
 				{
-					object->after_update_action(object->data, object);
+					object->after_update_action(world, object, object->data);
 				}
 
 				if (object->disabled)
@@ -557,7 +557,7 @@ void helperThread(void* _sw_thread_helper)
 
 			if (object->after_update_action)
 			{
-				object->after_update_action(object->data, object);
+				object->after_update_action(world, object, object->data);
 			}
 
 			if (object->disabled)
@@ -592,7 +592,7 @@ void helperThread(void* _sw_thread_helper)
 
 			if (object->after_update_action)
 			{
-				object->after_update_action(object->data, object);
+				object->after_update_action(world, object, object->data);
 			}
 
 			if (object->disabled)

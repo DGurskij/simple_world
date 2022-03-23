@@ -89,6 +89,23 @@ SW_World* swCreateWorld(unsigned type, unsigned int req_iter_time_ms, unsigned c
 	}
 	// END::Init const collection
 
+	// START::Init interactions
+	world->intreaction_group = createInteractionGroup(count_threads + 1, 50000);
+
+	if (!world->intreaction_group)
+	{
+#ifdef _DEBUG
+		printf("SIMPLE_WORLD::ERROR::interactions buffer not initialized\n");
+#endif
+		destroyObjectGroup(world->main_collections, count_threads + 1);
+
+		free(world->disabled_objects);
+		free(world->restore_objects);
+		free(world);
+		return 0;
+	}
+	// END::Init interactions
+
 	world->independ_collections = 0;
 
 	if (type == SW_WTYPE_MULTITHREADED)
@@ -105,6 +122,8 @@ SW_World* swCreateWorld(unsigned type, unsigned int req_iter_time_ms, unsigned c
 #endif
 				destroyObjectGroup(world->main_collections, count_threads + 1);
 				destroyObjectGroup(world->const_collections, count_threads + 1);
+
+				destroyInteractionGroup(world->intreaction_group, count_threads + 1);
 
 				free(world->disabled_objects);
 				free(world->restore_objects);
@@ -131,6 +150,8 @@ SW_World* swCreateWorld(unsigned type, unsigned int req_iter_time_ms, unsigned c
 				destroyObjectGroup(world->const_collections, count_threads + 1);
 				destroyObjectGroup(world->independ_collections, count_threads + 1);
 
+				destroyInteractionGroup(world->intreaction_group, count_threads + 1);
+
 				free(world->disabled_objects);
 				free(world->restore_objects);
 				free(world);
@@ -152,6 +173,8 @@ SW_World* swCreateWorld(unsigned type, unsigned int req_iter_time_ms, unsigned c
 					destroyObjectGroup(world->main_collections, count_threads + 1);
 					destroyObjectGroup(world->const_collections, count_threads + 1);
 					destroyObjectGroup(world->independ_collections, count_threads + 1);
+
+					destroyInteractionGroup(world->intreaction_group, count_threads + 1);
 
 					free(world->disabled_objects);
 					free(world->restore_objects);
@@ -267,6 +290,11 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 	SW_ObjectCollection* restore_col = 0;
 
+	SW_Interaction** interactions = world->intreaction_group->interactions[0];
+	unsigned* counts_interactions = world->intreaction_group->counts_interactions;
+	unsigned count_interactions = 0;
+	unsigned i = 0;
+
 	// restore enabled objects
 	while (object)
 	{
@@ -312,6 +340,23 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 	object = collection->first;
 
+	i = 0;
+	count_interactions = counts_interactions[0];
+
+	for (; i < count_interactions; i++)
+	{
+		printf("interaction\n");
+		interactions[i]->interactF(
+			world,
+			interactions[i]->object1,
+			interactions[i]->object2,
+			interactions[i]->accumulators1,
+			interactions[i]->accumulators2,
+			interactions[i]->object1->data,
+			interactions[i]->object2->data
+		);
+	}
+
 	// interaction cycle
 	while (object)
 	{
@@ -333,6 +378,15 @@ unsigned swSyncMoveWorld(SW_World* world)
 			update = update->next;
 		}
 
+		// updates by external data
+		update = object->upd_external_operations->first;
+
+		while (update)
+		{
+			update->operationF(update->target_field, *update->accumalator);
+			update = update->next;
+		}
+
 		update = object->upd_const_operations->first;
 
 		// updates by constant
@@ -344,7 +398,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 		if (object->after_update_action)
 		{
-			object->after_update_action(object->data, object);
+			object->after_update_action(world, object, object->data);
 		}
 
 		if (object->disabled)
@@ -378,7 +432,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 
 		if (object->after_update_action)
 		{
-			object->after_update_action(object->data, object);
+			object->after_update_action(world, object, object->data);
 		}
 
 		if (object->disabled)
@@ -464,6 +518,7 @@ SW_UpdOperation* swAddUpdOpToObject(SW_World* world, SW_Object* object, float* t
 	if (upd_operation)
 	{
 		updCollectionPush(object->upd_operations, upd_operation);
+		object->count_upd_ops++;
 	}
 
 	return upd_operation;
@@ -486,9 +541,40 @@ SW_UpdOperation* swAddConstUpdOpToObject(SW_Object* object, float* target_field,
 	return upd_operation;
 }
 
-SIMPLE_WORLD_API void swAddUpdHandler(SW_Object* object, void(*handler)(void* data, SW_Object* object))
+SW_UpdOperation* swAddExternalUpdOpToObject(SW_Object* object, float* target_field, float* source, unsigned math_operation)
+{
+	SW_UpdOperation* upd_operation = updExternalOperationCreate(target_field, source, math_operation);
+
+	if (upd_operation)
+	{
+		updCollectionPush(object->upd_external_operations, upd_operation);
+	}
+
+	return upd_operation;
+}
+
+void swAddUpdHandler(SW_Object* object, void(*handler)(SW_World* world, SW_Object* object, void* data))
 {
 	object->after_update_action = handler;
+}
+
+void swAddInteraction(SW_World* world, SW_Object* object1, SW_Object* object2, unsigned thread_owner, interactFunc interaction)
+{
+	unsigned* counts_interactions = world->intreaction_group->counts_interactions;
+
+	world->intreaction_group->interactions[thread_owner][counts_interactions[thread_owner]] = createInteraction(
+		object1,
+		object2,
+		thread_owner,
+		interaction
+	);
+
+	counts_interactions[thread_owner]++;
+}
+
+void swAddInteractionB(SW_Object* object1, SW_Object* object2, unsigned thread_owner, interactFunc interaction)
+{
+	swAddInteraction(bind_world, object1, object2, thread_owner, interaction);
 }
 
 void swDisableObject(SW_World* world, SW_Object* object)
@@ -649,6 +735,8 @@ void swDestroyWorld(SW_World* world)
 
 	destroyObjectGroup(world->main_collections, world->count_threads + 1);
 	destroyObjectGroup(world->const_collections, world->count_threads + 1);
+
+	destroyInteractionGroup(world->intreaction_group, world->count_threads + 1);
 
 	objectCollectionDestroy(world->disabled_objects);
 	objectCollectionDestroy(world->restore_objects);

@@ -23,6 +23,7 @@ extern "C" {
 	typedef struct SWorld SW_World;
 	typedef struct SWObject SW_Object;
 	typedef struct SWUpdOperation SW_UpdOperation;
+	typedef struct SWInteraction SW_Interaction;
 
 	/*
 		Return pointer on World structure or 0 if unsuccess.
@@ -136,9 +137,30 @@ extern "C" {
 	SIMPLE_WORLD_API SW_UpdOperation* swAddConstUpdOpToObject(SW_Object* object, float* target_field, float const_value, unsigned math_operation);
 
 	/*
-		Add handler which would be called after complete all updates
+		Work like  swAddConstUpdOpToObject but instead of const bind value for update with external ptr
 	*/
-	SIMPLE_WORLD_API void swAddUpdHandler(SW_Object* object, void(*handler)(void* data, SW_Object* object));
+	SIMPLE_WORLD_API SW_UpdOperation* swAddExternalUpdOpToObject(SW_Object* object, float* target_field, float* source, unsigned math_operation);
+
+	/*
+		Add handler which would be called after complete all updates for object
+	*/
+	SIMPLE_WORLD_API void swAddUpdHandler(SW_Object* object, void(*handler)(SW_World* world, SW_Object* object, void* data));
+
+	typedef void (*interactFunc)(
+		SW_World* world,
+		SW_Object* object1,
+		SW_Object* object2,
+		float* accumulators1,
+		float* accumulators2,
+		void* data1,
+		void* data2
+	);
+
+	/*
+		Add interaction between to objects
+	*/
+	SIMPLE_WORLD_API void swAddInteraction(SW_World* world, SW_Object* object1, SW_Object* object2, unsigned thread_owner, interactFunc interactF);
+	SIMPLE_WORLD_API void swAddInteractionB(SW_Object* object1, SW_Object* object2, unsigned thread_owner, interactFunc interactF);
 
 	/*
 		Disable object, do it permanent if engine not active, otherwise work on next iteration

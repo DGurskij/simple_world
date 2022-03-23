@@ -23,6 +23,8 @@ SW_UpdOperation* updOperationCreate(float* target_field, float* accumulator, flo
 
 		upd_operation->operation = operation;
 		upd_operation->operationF = operationF[operation];
+
+		upd_operation->is_external = 0;
 	}
 
 	return upd_operation;
@@ -43,12 +45,14 @@ SW_UpdOperation* updConstOperationCreate(float* target_field, float const_value,
 
 		upd_operation->operation = operation;
 		upd_operation->operationF = operationF[operation];
+
+		upd_operation->is_external = 0;
 	}
 
 	return upd_operation;
 }
 
-/*SW_UpdOperation* updConstOperationCreate(float* target_field, float const_value, unsigned operation)
+SW_UpdOperation* updExternalOperationCreate(float* target_field, float* source, unsigned operation)
 {
 	SW_UpdOperation* upd_operation = malloc(sizeof(SW_UpdOperation));
 
@@ -58,15 +62,17 @@ SW_UpdOperation* updConstOperationCreate(float* target_field, float const_value,
 		upd_operation->next = 0;
 
 		upd_operation->target_field = target_field;
-		upd_operation->accumalator = accumulator;
-		upd_operation->const_value = const_value;
+		upd_operation->accumalator = source;
+		upd_operation->reset_value = 0;
 
 		upd_operation->operation = operation;
 		upd_operation->operationF = operationF[operation];
+
+		upd_operation->is_external = 1;
 	}
 
 	return upd_operation;
-}*/
+}
 
 void updOperationDestroy(SW_UpdOperation* upd_operation)
 {
@@ -80,7 +86,7 @@ void updOperationDestroy(SW_UpdOperation* upd_operation)
 		upd_operation->next->prev = upd_operation->prev;
 	}
 
-	if (upd_operation->accumalator)
+	if (upd_operation->accumalator && upd_operation->is_external == 0)
 	{
 		free(upd_operation->accumalator);
 	}

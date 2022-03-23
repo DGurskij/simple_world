@@ -18,6 +18,11 @@ SW_Object* objectCreate(void* data, unsigned type, unsigned thread_owner)
 		object->upd_const_operations = updCollectionCreate();
 		object->upd_const_operations_disabled = updCollectionCreate();
 
+		object->upd_external_operations = updCollectionCreate();
+		object->upd_external_operations_disabled = updCollectionCreate();
+
+		object->count_upd_ops = 0;
+
 		object->type = type;
 
 		object->after_update_action = 0;
@@ -50,6 +55,9 @@ void objectDestroy(SW_Object* object)
 
 	updCollectionDestroy(object->upd_const_operations);
 	updCollectionDestroy(object->upd_const_operations_disabled);
+
+	updCollectionDestroy(object->upd_external_operations);
+	updCollectionDestroy(object->upd_external_operations_disabled);
 
 	free(object);
 }

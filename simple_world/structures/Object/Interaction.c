@@ -60,53 +60,64 @@ SW_Interaction* createInteraction(SW_Object* object1, SW_Object* object2, unsign
 	{
 		interaction->thread_owner = thread_owner;
 
-		interaction->accumulators1 = malloc(sizeof(float*) * object1->count_upd_ops);
-		interaction->accumulators2 = malloc(sizeof(float*) * object2->count_upd_ops);
-
-		// bind interaction with accumulators for object1
 		SW_UpdCollection* upd_ops = object1->upd_operations;
 		SW_UpdOperation* upd_operation = upd_ops->first;
 		unsigned i = 0;
-		
-		while (upd_operation)
-		{
-			interaction->accumulators1[i++] = &upd_operation->accumalator[thread_owner];
 
-			upd_operation = upd_operation->next;
+		interaction->object1 = object1;
+		interaction->object2 = object2;
+
+		if (object1->type != SW_OBJECT_EMPTY && object1->count_upd_ops)
+		{
+			interaction->accumulators1 = malloc(sizeof(float*) * object1->count_upd_ops);
+
+			// bind interaction with accumulators for object1
+
+			while (upd_operation)
+			{
+				interaction->accumulators1[i++] = &upd_operation->accumalator[thread_owner];
+
+				upd_operation = upd_operation->next;
+			}
+
+			upd_ops = object1->upd_operations_disabled;
+			upd_operation = upd_ops->first;
+			i = 0;
+
+			while (upd_operation)
+			{
+				interaction->accumulators1[i++] = &upd_operation->accumalator[thread_owner];
+
+				upd_operation = upd_operation->next;
+			}
 		}
 
-		upd_ops = object1->upd_operations_disabled;
-		upd_operation = upd_ops->first;
-		i = 0;
-
-		while (upd_operation)
+		if (object2->type != SW_OBJECT_EMPTY && object2->count_upd_ops)
 		{
-			interaction->accumulators1[i++] = &upd_operation->accumalator[thread_owner];
+			interaction->accumulators2 = malloc(sizeof(float*) * object2->count_upd_ops);
 
-			upd_operation = upd_operation->next;
-		}
+			// bind interaction with accumulators for object2
+			upd_ops = object2->upd_operations;
+			upd_operation = upd_ops->first;
+			i = 0;
 
-		// bind interaction with accumulators for object2
-		upd_ops = object2->upd_operations;
-		upd_operation = upd_ops->first;
-		i = 0;
+			while (upd_operation)
+			{
+				interaction->accumulators2[i++] = &upd_operation->accumalator[thread_owner];
 
-		while (upd_operation)
-		{
-			interaction->accumulators2[i++] = &upd_operation->accumalator[thread_owner];
+				upd_operation = upd_operation->next;
+			}
 
-			upd_operation = upd_operation->next;
-		}
+			upd_ops = object2->upd_operations_disabled;
+			upd_operation = upd_ops->first;
+			i = 0;
 
-		upd_ops = object2->upd_operations_disabled;
-		upd_operation = upd_ops->first;
-		i = 0;
+			while (upd_operation)
+			{
+				interaction->accumulators2[i++] = &upd_operation->accumalator[thread_owner];
 
-		while (upd_operation)
-		{
-			interaction->accumulators2[i++] = &upd_operation->accumalator[thread_owner];
-
-			upd_operation = upd_operation->next;
+				upd_operation = upd_operation->next;
+			}
 		}
 
 		interaction->interactF = interactF;
@@ -117,8 +128,15 @@ SW_Interaction* createInteraction(SW_Object* object1, SW_Object* object2, unsign
 
 void destroyInteraction(SW_Interaction* interaction)
 {
-	free(interaction->accumulators1);
-	free(interaction->accumulators2);
+	if (interaction->object1->type != SW_OBJECT_EMPTY)
+	{
+		free(interaction->accumulators1);
+	}
+
+	if (interaction->object2->type != SW_OBJECT_EMPTY)
+	{
+		free(interaction->accumulators2);
+	}
 
 	free(interaction);
 }

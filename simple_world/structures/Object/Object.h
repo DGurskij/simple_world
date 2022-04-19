@@ -33,6 +33,11 @@ struct SWObject
 
 	unsigned thread_owner;
 
+	/*
+		0 - not disabled
+		1 - disabled asynch and must be place to disable collection
+		2 - disabled full
+	*/
 	unsigned disabled;
 };
 

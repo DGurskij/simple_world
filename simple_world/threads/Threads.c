@@ -284,7 +284,10 @@ void mainThread(void* _world)
 
 				while (update)
 				{
-					update->accumalator[0] = update->reset_value;
+					for (j = 0; j < count_collections; j++)
+					{
+						update->accumalator[j] = update->reset_value;
+					}
 					update = update->next;
 				}
 
@@ -495,9 +498,6 @@ void helperThread(void* _sw_thread_helper)
 	SW_World* world = helper->world;
 	unsigned thread_index = helper->thread_index;
 
-	// number for access to collections
-	unsigned thread_number = helper->thread_index + 1;
-
 #ifdef _DEBUG
 	printf("SIMPLE_WORLD::Helper thread start: %d\n", thread_index);
 #endif
@@ -508,6 +508,7 @@ void helperThread(void* _sw_thread_helper)
 	SW_Object* object;
 	SW_UpdOperation* update;
 
+	// number for access to collections
 	unsigned collection_index = thread_index + 1;
 
 	while (world->is_exist == 1)

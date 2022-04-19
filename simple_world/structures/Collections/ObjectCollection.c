@@ -75,12 +75,20 @@ void objectCollectionRemoveObject(SW_ObjectCollection* collection, SW_Object* ob
 	if (collection->first == object)
 	{
 		collection->first = object->next;
-		object->next->prev = 0;
+
+		if (object->next)
+		{
+			object->next->prev = 0;
+		}
 	}
 	else if (collection->last == object)
 	{
 		collection->last = object->prev;
-		object->prev->next = 0;
+
+		if (object->prev)
+		{
+			object->prev->next = 0;
+		}
 	}
 	else
 	{

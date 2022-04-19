@@ -291,8 +291,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 	SW_ObjectCollection* restore_col = 0;
 
 	SW_Interaction** interactions = world->intreaction_group->interactions[0];
-	unsigned* counts_interactions = world->intreaction_group->counts_interactions;
-	unsigned count_interactions = 0;
+	unsigned count_interactions = world->intreaction_group->counts_interactions[0];
 	unsigned i = 0;
 
 	// restore enabled objects
@@ -305,17 +304,14 @@ unsigned swSyncMoveWorld(SW_World* world)
 			restore_col = world->main_collections[0];
 		}
 
-		if (object->type == SW_OBJECT_INDEPEND)
-		{
-			restore_col = world->independ_collections[0];
-		}
-
 		if (object->type == SW_OBJECT_CONST)
 		{
 			restore_col = world->const_collections[0];
 		}
 
 		objectCollectionPush(restore_col, object);
+
+		object->disabled = 0;
 
 		object = object->next;
 	}
@@ -338,30 +334,22 @@ unsigned swSyncMoveWorld(SW_World* world)
 		object = object->next;
 	}
 
-	object = collection->first;
-
 	i = 0;
-	count_interactions = counts_interactions[0];
 
 	for (; i < count_interactions; i++)
 	{
-		printf("interaction\n");
-		interactions[i]->interactF(
-			world,
-			interactions[i]->object1,
-			interactions[i]->object2,
-			interactions[i]->accumulators1,
-			interactions[i]->accumulators2,
-			interactions[i]->object1->data,
-			interactions[i]->object2->data
-		);
-	}
-
-	// interaction cycle
-	while (object)
-	{
-		// TODO: add interaction
-		object = object->next;
+		if (!(interactions[i]->object1->disabled || interactions[i]->object2->disabled))
+		{
+			interactions[i]->interactF(
+				world,
+				interactions[i]->object1,
+				interactions[i]->object2,
+				interactions[i]->accumulators1,
+				interactions[i]->accumulators2,
+				interactions[i]->object1->data,
+				interactions[i]->object2->data
+			);
+		}
 	}
 
 	object = collection->first;
@@ -435,7 +423,7 @@ unsigned swSyncMoveWorld(SW_World* world)
 			object->after_update_action(world, object, object->data);
 		}
 
-		if (object->disabled)
+		if (object->disabled == 1)
 		{
 			SW_Object* next = object->next;
 
@@ -473,7 +461,7 @@ SW_Object* swCreateObject(SW_World* world, void* data, unsigned type, unsigned t
 {
 	SW_Object* object = objectCreate(data, type, thread_owner);
 	
-	if (object)
+	if (object && type != SW_OBJECT_EMPTY)
 	{
 		if (type == SW_OBJECT_CONST)
 		{
@@ -581,20 +569,24 @@ void swDisableObject(SW_World* world, SW_Object* object)
 {
 	if (world->state != 1)
 	{
-		if (object->type == SW_OBJECT_CONST)
+		if (object->type != SW_OBJECT_EMPTY)
 		{
-			objectCollectionRemoveObject(world->const_collections[object->thread_owner], object);
+			if (object->type == SW_OBJECT_CONST)
+			{
+				objectCollectionRemoveObject(world->const_collections[object->thread_owner], object);
+			}
+			else if (object->type == SW_OBJECT_INDEPEND && world->count_threads > 0)
+			{
+				objectCollectionRemoveObject(world->independ_collections[object->thread_owner], object);
+			}
+			else
+			{
+				objectCollectionRemoveObject(world->main_collections[object->thread_owner], object);
+			}
+
+			objectCollectionPush(world->disabled_objects, object);
+			object->disabled = 2;
 		}
-		else if (object->type == SW_OBJECT_INDEPEND && world->count_threads > 0)
-		{
-			objectCollectionRemoveObject(world->independ_collections[object->thread_owner], object);
-		}
-		else
-		{
-			objectCollectionRemoveObject(world->main_collections[object->thread_owner], object);
-		}
-		
-		objectCollectionPush(world->disabled_objects, object);
 	}
 	else
 	{
@@ -609,43 +601,17 @@ void swDisableObjectB(SW_Object* object)
 
 void swEnableObject(SW_World* world, SW_Object* object)
 {
-	object->disabled = 0;
-
-	objectCollectionRemoveObject(world->disabled_objects, object);
-	objectCollectionPush(world->restore_objects, object);
+	if (object->type != SW_OBJECT_EMPTY)
+	{
+		objectCollectionRemoveObject(world->disabled_objects, object);
+		objectCollectionPush(world->restore_objects, object);
+	}
 }
 
 void swEnableObjectB(SW_Object* object)
 {
 	swEnableObject(bind_world, object);
 }
-
-void swDisableUpdOp(SW_World* world, SW_Object* object, SW_UpdOperation* operation)
-{
-	if (world->state != 1)
-	{
-		if (operation->accumalator)
-		{
-			updCollectionRemoveItem(object->upd_operations, operation, 0);
-			updCollectionPush(object->upd_operations_disabled, operation);
-		}
-		else
-		{
-			updCollectionRemoveItem(object->upd_const_operations, operation, 0);
-			updCollectionPush(object->upd_const_operations_disabled, operation);
-		}
-	}
-}
-
-void swDisableUpdOpB(SW_Object* object, SW_UpdOperation* operation)
-{
-	swDisableUpdOp(bind_world, object, operation);
-}
-
-/*void swSetInitCycleValueToObject(SW_Object* object, float* target_field, float* source)
-{
-
-}*/
 
 
 
@@ -733,10 +699,11 @@ void swDestroyWorld(SW_World* world)
 		CloseHandle(world->main_thread);
 	}
 
+	destroyInteractionGroup(world->intreaction_group, world->count_threads + 1);
+
 	destroyObjectGroup(world->main_collections, world->count_threads + 1);
 	destroyObjectGroup(world->const_collections, world->count_threads + 1);
 
-	destroyInteractionGroup(world->intreaction_group, world->count_threads + 1);
 
 	objectCollectionDestroy(world->disabled_objects);
 	objectCollectionDestroy(world->restore_objects);
@@ -746,4 +713,32 @@ void swDestroyWorld(SW_World* world)
 #ifdef _DEBUG
 	printf("SIMPLE_WORLD::World destroyed successfull\n");
 #endif
+}
+
+
+
+/********************
+	UTILS METHODS
+*********************/
+
+
+
+float swDistanceP1P2(float x1, float y1, float x2, float y2)
+{
+	return powf(powf(x1 - x2, 2.f) + powf(y1 - y2, 2.f), 0.5f);
+}
+float swDistanceP1P2WithOut(float x1, float y1, float x2, float y2, float* dx_out, float* dy_out)
+{
+	float dx = x1 - x2;
+	float dy = y1 - y2;
+
+	*dx_out = dx;
+	*dy_out = dy;
+
+	return powf(dx * dx + dy * dy, 0.5f);
+}
+
+float swDistanceDxDy(float dx, float dy)
+{
+	return powf(powf(dx, 2.f) + powf(dy, 2.f), 0.5f);
 }
